@@ -161,7 +161,14 @@ uint32 ata_init(void) {
     outl(inl(0xc3000028) | 0x20, 0xc3000028);  // clear intr
     outl(inl(0xc3000028) & ~0x10000000, 0xc3000028); // reset?
     
-    outl(0x10, 0xc3000000);
+    /* PIO timing for IDE0_PRI_TIMING0.
+     * Rockbox originally used 0x10 here (faster PIO), but that causes
+     * corrupt data when used with mSATA adapters and some SD adapters.
+     * Use the original firmware timing 0xC293 instead, which is safe
+     * for all adapters.
+     * See Rockbox firmware/target/arm/pp/ata-pp5020.c pio80mhz[].
+     */
+    outl(0xC293, 0xc3000000);
     outl(0x80002150, 0xc3000004);
   } else {
     /* PP5002 */
