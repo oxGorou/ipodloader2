@@ -105,23 +105,32 @@ void menu_frame (uint16 *fb, int x1, int y1, int x2, int y2, uint16 color) {
 static void menu_recenter() {
   int i;
   int avail_h = menu.ipod->lcd_height - 30; /* leave room for title bar */
+  int char_w;
 
-  /* Find the widest item string (8 pixels per character) */
+  /* Choose font: try large (16px), then medium (8px), then small (6px).
+   * Pick the largest font whose total height still fits the screen. */
+  menu.fh = 16;
+  menu.h = menu.numItems * (menu.fh + 2); /* line_height = fh + 2 */
+  if(menu.h > avail_h) {
+    menu.fh = 8;
+    menu.h = menu.numItems * (menu.fh + 2);
+  }
+  if(menu.h > avail_h) {
+    menu.fh = 6;
+    menu.h = menu.numItems * (menu.fh + 2);
+  }
+
+  /* large and medium fonts are 8px wide, small is 4px wide */
+  char_w = (menu.fh == 6) ? 4 : 8;
+
+  /* Find the widest item string */
   menu.w = 0;
   for(i = 0; i < menu.numItems; i++) {
-    int len = mlc_strlen(menu.string[i]) << 3; /* * 8 pixels/char */
+    int len = mlc_strlen(menu.string[i]) * char_w;
     if(menu.w < len)
       menu.w = len;
   }
-  menu.w += 16; /* 8px padding each side */
-
-  /* Choose font: try large (16px) first, fall back to medium (8px) */
-  menu.fh = 16;
-  menu.h = menu.numItems * (menu.fh + 4); /* line_height = fh + 4 */
-  if(menu.h > avail_h) {
-    menu.fh = 8;
-    menu.h = menu.numItems * (menu.fh + 4);
-  }
+  menu.w += 8; /* 4px padding each side */
 
   /* Clamp box to screen bounds */
   if(menu.w > menu.ipod->lcd_width - 4)
@@ -173,11 +182,13 @@ void menu_drawprogress(uint16 *fb,uint8 completed) {
 
 void menu_redraw(uint16 *fb, int selectedItem, char *title, char *countDown, int drawLock) {
   int i;
-  int line_height = menu.fh + 4;
+  int line_height = menu.fh + 2;
   uint16 fg, bg;
   uint8 tp;
 
-  const uint8 *menu_font = (menu.fh == 16)? font_large : font_medium;
+  const uint8 *menu_font = font_medium;
+  if (menu.fh == 16) menu_font = font_large;
+  else if (menu.fh == 6) menu_font = font_small;
   const uint8 *prev_font = console_currentfont ();
   console_setfont (menu_font);
 

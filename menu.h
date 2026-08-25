@@ -3,7 +3,7 @@
 
 #include "bootloader.h"
 
-#define MAX_MENU_ITEMS 8
+#define MAX_MENU_ITEMS 10
 
 void menu_cls(uint16 *fb);
 void menu_init();

@@ -7,7 +7,7 @@
 
 #include "fontlarge.h"
 #include "fontmedium.h"
-// not used currently: #include "fontsmall.h"
+#include "fontsmall.h"
 
 
 int font_lines;
