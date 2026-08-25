@@ -350,7 +350,7 @@ static int print_to_console(unsigned c, void **ptr) {
   return 0;
 }
 
-static int do_buffered_printf = 0;  // boolean flag
+static int do_buffered_printf = 0;  // direct output by default
 static int do_slow_printf = 0;      // boolean flag
 static const int printf_buffer_size = 512; // 512 should be enough for what we use it for
 static uint8 *printf_buffer = 0;
@@ -661,6 +661,11 @@ void mlc_clear_screen () {
   #endif
 }
 
+void mlc_discard_buffer () {
+  // silently discard any buffered printf output without displaying it
+  printf_buflen = 0;
+}
+
 void mlc_set_output_options (int buffered, int slow) {
   // buffered:
   //   pass <1> to have printf calls not output to console but store the text in a buffer
@@ -688,9 +693,6 @@ void mlc_set_output_options (int buffered, int slow) {
 
 // call this if you can still continue but want to make the user see what you just printed:
 void mlc_show_critical_error () {
-  mlc_set_output_options (0, 0);
-  ipod_set_backlight (1);
-  mlc_delay_ms (5000); // just pause for 5s
   keypad_flush ();
 }
 

@@ -104,23 +104,32 @@ void menu_frame (uint16 *fb, int x1, int y1, int x2, int y2, uint16 color) {
 
 static void menu_recenter() {
   int i;
+  int avail_h = menu.ipod->lcd_height - 30; /* leave room for title bar */
 
+  /* Find the widest item string (8 pixels per character) */
   menu.w = 0;
   for(i = 0; i < menu.numItems; i++) {
-    if(menu.w < (mlc_strlen (menu.string[i]) << 3))
-      menu.w = mlc_strlen (menu.string[i]) << 3;
+    int len = mlc_strlen(menu.string[i]) << 3; /* * 8 pixels/char */
+    if(menu.w < len)
+      menu.w = len;
   }
-  menu.w += 6;
+  menu.w += 16; /* 8px padding each side */
+
+  /* Choose font: try large (16px) first, fall back to medium (8px) */
   menu.fh = 16;
-  menu.h = menu.numItems * 20;
-  if(menu.h > (menu.ipod->lcd_height - 50)) {
+  menu.h = menu.numItems * (menu.fh + 4); /* line_height = fh + 4 */
+  if(menu.h > avail_h) {
     menu.fh = 8;
-    menu.h = menu.numItems * 12;
+    menu.h = menu.numItems * (menu.fh + 4);
   }
-  if(menu.w < (menu.ipod->lcd_width*3/5))
-    menu.w = menu.ipod->lcd_width*3/5;
-  if(menu.h < (menu.ipod->lcd_height*2/5))
-    menu.h = menu.ipod->lcd_height*2/5;
+
+  /* Clamp box to screen bounds */
+  if(menu.w > menu.ipod->lcd_width - 4)
+    menu.w = menu.ipod->lcd_width - 4;
+  if(menu.h > avail_h)
+    menu.h = avail_h;
+
+  /* Center the box on screen, below the title bar */
   menu.x = (menu.ipod->lcd_width - menu.w) >> 1;
   menu.y = ((menu.ipod->lcd_height - menu.h - (menu.fh + 6)) >> 1) + menu.fh + 6;
 }

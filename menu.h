@@ -3,7 +3,7 @@
 
 #include "bootloader.h"
 
-#define MAX_MENU_ITEMS 16 // 5G model can show much more than 10 items
+#define MAX_MENU_ITEMS 8
 
 void menu_cls(uint16 *fb);
 void menu_init();

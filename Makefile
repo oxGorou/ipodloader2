@@ -19,7 +19,12 @@ endif
 endif
 
 # Suffix with "d" for development version, "b" for beta version
-VERSION   = 2.9.0d
+VERSION   = 2.9.0
+
+# debug builds get the "d" suffix (development version)
+ifneq (,$(filter debug,$(MAKECMDGOALS)))
+VERSION   := $(VERSION)d
+endif
 
 ifdef GIT_COMMIT_HASH
 	VERSION   := "$(VERSION) $(GIT_COMMIT_HASH)"

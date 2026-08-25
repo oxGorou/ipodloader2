@@ -114,10 +114,11 @@
 #define REG_LBA0          0x3 // Same as LBA28 REG_SECT.
 #define REG_LBA1          0x4 // Same as LBA28 REG_CYL_LOW.
 #define REG_LBA2          0x5 // Same as LBA28 REG_CYL_HIGH.
-#define REG_SECCOUNT_HIGH 0xA
-#define REG_LBA3          0xB
-#define REG_LBA4          0xC
-#define REG_LBA5          0xD
+/* LBA48 high registers: in standard ATA, high bytes are written to the SAME
+ * register address as the low bytes, in the order high-then-low. The device
+ * latches the first write as high and the second as low.
+ * On the PP5020, this is done by writing to the same byte address twice.
+ * We use REG_SECCOUNT_LOW, REG_LBA0, REG_LBA1, REG_LBA2 for both. */
 
 #define REG_DA          0x9
 
@@ -166,6 +167,39 @@
  * condition.
  */
 #define COMMAND_READ_SECTORS_EXT      0x24
+
+/* READ MULTIPLE - PIO Data-In, LBA28.
+ * Transfers sectors in blocks of multisectors per DRQ.
+ * Requires SET MULTIPLE MODE to be issued first.
+ */
+#define COMMAND_READ_MULTIPLE         0xC4
+
+/* READ MULTIPLE EXT - PIO Data-In, LBA48.
+ * Transfers sectors in blocks of multisectors per DRQ.
+ * Requires SET MULTIPLE MODE to be issued first.
+ */
+#define COMMAND_READ_MULTIPLE_EXT     0x29
+
+/* SET MULTIPLE MODE - Sets the block size for READ MULTIPLE / WRITE MULTIPLE.
+ * The Sector Count register specifies the number of sectors per block.
+ * A value of 0 means 256 sectors per block.
+ */
+#define COMMAND_SET_MULTIPLE_MODE     0xC6
+
+/* SET FEATURES - Used to enable/disable features such as write cache,
+ * read look-ahead, PIO mode, etc.
+ */
+#define COMMAND_SET_FEATURES          0xEF
+
+/* SECURITY FREEZE LOCK - Prevents the device from entering a security state.
+ * Should be sent during init if the device supports Security Mode (word 82 bit 1).
+ */
+#define COMMAND_SECURITY_FREEZE_LOCK  0xF5
+
+/* SMART (Self-Monitoring, Analysis and Reporting Technology) */
+#define COMMAND_SMART                 0xB0
+#define SMART_SMART_STATUS           0xDA
+#define SMART_READ_DATA              0xD0
 
 /* STANDBY IMMEDIATE (StandbyIm)
  *
@@ -235,6 +269,11 @@
  */
 #define ERROR_ABRT 0x04
 
-/* There are 8 total error bits that can be set, but besides ABRT, they are all command dependant.*/
+/* IDNF: ID Not Found. Indicates the requested sector's ID field could not
+ * be found. Retry of the command is not likely to succeed.
+ */
+#define ERROR_IDNF 0x10
+
+/* There are 8 total error bits that can be set, but besides ABRT and IDNF, they are all command dependant.*/
 
 #endif

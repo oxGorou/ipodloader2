@@ -25,10 +25,26 @@ static void shutdown_loader (void)
 
 static void standby (void)
 {
-  shutdown_loader ();
   ipod_set_backlight (0);
+  /* Blank the screen and push it to the LCD before powering the panel
+   * down, so the LCD RAM holds a clean frame. Then put the LCD driver
+   * into standby via the power control register (0x03), the same way
+   * Rockbox does in lcd_shutdown(). Leaving the op-amp running is what
+   * causes the stray vertical line on wake.
+   */
   fb_cls (framebuffer, ipod_get_hwinfo()->lcd_is_grayscale?BLACK:WHITE);
   fb_update(framebuffer);
+  if (ipod_get_hwinfo()->hw_ver < 6 || ipod_get_hwinfo()->hw_ver == 0x7) {
+    uint16 power_reg_h;
+    /* bias/step-up config kept in the high byte:
+     * 1G/2G/3G = 0x1120 (1/7 bias, 5x step-up @ clk/8)
+     * 4G/Mini  = 0x1200 (1/7 bias, 6x step-up @ clk/32)
+     */
+    power_reg_h = (ipod_get_hwinfo()->hw_ver < 4) ? 0x1120 : 0x1200;
+    lcd_cmd_and_data16(0x3, power_reg_h | 0x00); /* turn off op amp power */
+    lcd_cmd_and_data16(0x3, power_reg_h | 0x02); /* put LCD driver in standby */
+  }
+  shutdown_loader ();
   mlc_delay_ms (1000);
   pcf_standby_mode ();
 }
@@ -71,9 +87,11 @@ static void test_contrast (config_t *conf)
       linecolor = fb_rgb(linemode << 6,linemode << 6,linemode << 6);
       {
         int w = ipod->lcd_width;
-        menu_hline (framebuffer, 0, w-1, 78, linecolor);
-        menu_drawrect (framebuffer, 111, 82, w-1, 95, linecolor);
-        menu_drawrect (framebuffer, 0, 96, 110, 109, linecolor);
+        int h = ipod->lcd_height;
+        int mid_y = h * 5 / 8; /* ~62.5% down the screen */
+        menu_hline (framebuffer, 0, w-1, mid_y - 2, linecolor);
+        menu_drawrect (framebuffer, w/2+1, mid_y, w-1, mid_y + 12, linecolor);
+        menu_drawrect (framebuffer, 0, mid_y + 14, w/2-1, mid_y + 24, linecolor);
       }
       console_suppress_fbupdate (-1); // calls fb_update now
     }
@@ -702,6 +720,12 @@ void *loader(void) {
     mlc_printf("Debug=%d\n", conf->debug);
     mlc_set_output_options (0, conf->debug & 4);
     if (conf->backlight) ipod_set_backlight (1);
+  } else {
+    // debug=0: discard all buffered output and suppress future output.
+    mlc_set_output_options (1, 0);
+    mlc_discard_buffer ();
+    fb_cls(framebuffer, BLACK);
+    fb_update(framebuffer);
   }
 
   {

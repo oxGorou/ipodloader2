@@ -37,6 +37,7 @@ int mlc_sprintf(char *buf, const char *fmt, ...);
 int mlc_vprintf(const char *fmt, mlc_va_list args);
 int mlc_printf(const char *fmt, ...);
 
+void   mlc_discard_buffer(void);
 void   mlc_malloc_init(void);
 void  *mlc_malloc(size_t num);
 size_t mlc_strlen(const char *);
